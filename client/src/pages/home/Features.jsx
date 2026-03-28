@@ -1,13 +1,14 @@
 import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
 import { FileSearch, Briefcase, Bot, LineChart, Map, TrendingUp } from 'lucide-react';
 import { useRef } from 'react';
+import axios from 'axios';
 
 const features = [
     {
         title: "Resume Analyzer",
         description: "Get instant AI feedback on your resume and optimize it for Applicant Tracking Systems (ATS).",
-        icon: <FileSearch className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />,
-        gradient: "from-indigo-500/10 dark:from-indigo-500/20 to-blue-500/10 dark:to-blue-500/20"
+        icon: <FileSearch className="w-5 h-5 text-indigo-500 dark:text-indigo-400"  />,
+        gradient: "from-indigo-500/10 to-blue-500/10 dark:to-blue-500/20"
     },
     {
         title: "Job Matcher",
@@ -16,7 +17,7 @@ const features = [
         gradient: "from-emerald-500/10 dark:from-emerald-500/20 to-teal-500/10 dark:to-teal-500/20"
     },
     {
-        title: "Interview Bot",
+       title: "Interview Bot",
         description: "Practice with our AI-driven mock interviews tailored to specific job descriptions.",
         icon: <Bot className="w-5 h-5 text-amber-500 dark:text-amber-400" />,
         gradient: "from-amber-500/10 dark:from-amber-500/20 to-orange-500/10 dark:to-orange-500/20"
@@ -38,12 +39,13 @@ const features = [
 function FeatureCard({ feature, index, isCTA = false }) {
     const x = useMotionValue(0);
     const y = useMotionValue(0);
-
     const mouseXSpring = useSpring(x);
     const mouseYSpring = useSpring(y);
 
     const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["10deg", "-10deg"]);
     const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-10deg", "10deg"]);
+
+    const fileRef = useRef(null);
 
     const handleMouseMove = (e) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -62,7 +64,36 @@ function FeatureCard({ feature, index, isCTA = false }) {
         y.set(0);
     };
 
-    if (isCTA) {
+    const handleClick = () => {
+        if (feature?.title === "Resume Analyzer") {
+            fileRef.current.click();
+        }
+    };
+
+    const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("resume", file);
+
+    try {
+       const res = await axios.post(
+            "http://localhost:6030/upload",
+            formData
+        );
+
+
+        console.log(res.data);
+        alert("Upload success ");
+
+    } catch (err) {
+        console.log(err);
+        alert("Upload failed ");
+    }
+};
+
+if (isCTA) {
         return (
             <motion.div
                 initial={{ opacity: 0, y: 30 }}
@@ -90,10 +121,12 @@ function FeatureCard({ feature, index, isCTA = false }) {
 
     return (
         <motion.div
+            
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: index * 0.1 }}
+                onClick={handleClick} 
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
@@ -111,6 +144,16 @@ function FeatureCard({ feature, index, isCTA = false }) {
                     {feature.description}
                 </p>
             </div>
+             {feature?.title === "Resume Analyzer" && (
+                <input
+                    type="file"
+                    ref={fileRef}
+                    style={{ display: "none" }}
+                    onChange={handleFileUpload}
+                    accept=".pdf"
+                />
+            )}
+
         </motion.div>
     );
 }
